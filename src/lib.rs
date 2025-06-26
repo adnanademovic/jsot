@@ -27,6 +27,10 @@ pub fn decode(src: &[u8]) -> anyhow::Result<Value> {
             // 1 is for ZSTD
             zstd::decode_all(Cursor::new(compressed_data))?
         }
+        b'2' => {
+            // 2 is for Plain
+            compressed_data
+        }
         _ => {
             bail!("Unsupported format ID: {}", transport);
         }
@@ -36,11 +40,22 @@ pub fn decode(src: &[u8]) -> anyhow::Result<Value> {
 
 pub fn encode(value: Value) -> anyhow::Result<String> {
     let json_string = value.to_string();
-    let compressed_data = zstd::encode_all(Cursor::new(json_string.as_bytes()), 19)?;
+    let zstd_data = zstd::encode_all(Cursor::new(json_string.as_bytes()), 19)?;
+    let (prefix, compressed_data) =
+        pick_shortest([("1", zstd_data.as_slice()), ("2", json_string.as_bytes())]);
     let mut transport = String::with_capacity(1 + compressed_data.len().div_ceil(3) * 4);
-    transport += "1";
+    transport += prefix;
     BASE64_STANDARD.encode_string(compressed_data, &mut transport);
     Ok(transport)
+}
+
+fn pick_shortest<'a>(
+    options: impl IntoIterator<Item = (&'a str, &'a [u8])>,
+) -> (&'a str, &'a [u8]) {
+    options
+        .into_iter()
+        .reduce(|a, b| if a.1.len() > b.1.len() { b } else { a })
+        .unwrap()
 }
 
 #[cfg(test)]
@@ -52,12 +67,19 @@ mod tests {
     fn encode_hello_world() {
         let value = json!({ "hello": "world" });
         let blob = encode(value).unwrap();
-        assert_eq!("1KLUv/QBoiQAAeyJoZWxsbyI6IndvcmxkIn0=", blob);
+        assert_eq!("2eyJoZWxsbyI6IndvcmxkIn0=", blob);
     }
 
     #[test]
-    fn decode_hello_world() {
+    fn decode_hello_world_zstd() {
         let blob = "1KLUv/QBoiQAAeyJoZWxsbyI6IndvcmxkIn0=";
+        let value = decode(blob.as_bytes()).unwrap();
+        assert_eq!(json!({ "hello": "world" }), value);
+    }
+
+    #[test]
+    fn decode_hello_world_plain() {
+        let blob = "2eyJoZWxsbyI6IndvcmxkIn0=";
         let value = decode(blob.as_bytes()).unwrap();
         assert_eq!(json!({ "hello": "world" }), value);
     }

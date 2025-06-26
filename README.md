@@ -30,7 +30,7 @@ use serde_json::json;
 
 let value = json!({ "hello": "world" });
 let blob = encode(value)?;
-assert_eq!("0KLUv/QBoiQAAeyJoZWxsbyI6IndvcmxkIn0=", blob);
+assert_eq!("2eyJoZWxsbyI6IndvcmxkIn0=", blob);
 ```
 
 ### Decoding
@@ -38,7 +38,7 @@ assert_eq!("0KLUv/QBoiQAAeyJoZWxsbyI6IndvcmxkIn0=", blob);
 ```rust
 use jsot::decode;
 
-let blob = "0KLUv/QBoiQAAeyJoZWxsbyI6IndvcmxkIn0=";
+let blob = "2eyJoZWxsbyI6IndvcmxkIn0=";
 let value = decode(blob.as_bytes())?;
 assert_eq!(json!({ "hello": "world" }), value);
 ```
@@ -51,12 +51,12 @@ The data format consists of a transport ID byte, followed by Base64 data.
 
 | Transport ID | Compression | Wrapper |
 |--------------|-------------|---------|
-| `'0'`        | **Zstd**    | Base64  |
+| `'1'`        | **Zstd**    | Base64  |
+| `'2'`        | **None**    | Base64  |
 
-For now the only transport ID is `'0'`. All other IDs are reserved for future
-considerations.
+All other IDs are reserved for future considerations.
 
-JSON data is encoded as `JSON -> Transport (e.g. Zstd) -> Base64`.
+JSON data is encoded as `JSON -> Compression (e.g. Zstd) -> Base64`.
 
 ---
 
