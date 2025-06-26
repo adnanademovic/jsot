@@ -1,0 +1,14 @@
+[package]
+name = "jsot"
+version = "0.1.0"
+edition = "2024"
+authors = ["Adnan Ademovic <adnan@ademovic.com>"]
+description = "A tiny helper for shipping generic data in a short string."
+readme = "README.md"
+license = "MIT OR Apache-2.0"
+
+[dependencies]
+anyhow = "1.0.98"
+base64 = "0.22.1"
+serde_json = "1.0.140"
+zstd = "0.13.3"
