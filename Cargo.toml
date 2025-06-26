@@ -1,6 +1,6 @@
 [package]
 name = "jsot"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2024"
 authors = ["Adnan Ademovic <adnan@ademovic.com>"]
 description = "A tiny helper for shipping generic data in a short string."

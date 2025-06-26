@@ -23,8 +23,8 @@ pub fn decode(src: &[u8]) -> anyhow::Result<Value> {
     }
     let compressed_data = BASE64_STANDARD.decode(encoded_data)?;
     let json_string = match *transport {
-        b'0' => {
-            // 0 is for ZSTD
+        b'1' => {
+            // 1 is for ZSTD
             zstd::decode_all(Cursor::new(compressed_data))?
         }
         _ => {
@@ -38,7 +38,7 @@ pub fn encode(value: Value) -> anyhow::Result<String> {
     let json_string = value.to_string();
     let compressed_data = zstd::encode_all(Cursor::new(json_string.as_bytes()), 19)?;
     let mut transport = String::with_capacity(1 + compressed_data.len().div_ceil(3) * 4);
-    transport += "0";
+    transport += "1";
     BASE64_STANDARD.encode_string(compressed_data, &mut transport);
     Ok(transport)
 }
@@ -52,19 +52,19 @@ mod tests {
     fn encode_hello_world() {
         let value = json!({ "hello": "world" });
         let blob = encode(value).unwrap();
-        assert_eq!("0KLUv/QBoiQAAeyJoZWxsbyI6IndvcmxkIn0=", blob);
+        assert_eq!("1KLUv/QBoiQAAeyJoZWxsbyI6IndvcmxkIn0=", blob);
     }
 
     #[test]
     fn decode_hello_world() {
-        let blob = "0KLUv/QBoiQAAeyJoZWxsbyI6IndvcmxkIn0=";
+        let blob = "1KLUv/QBoiQAAeyJoZWxsbyI6IndvcmxkIn0=";
         let value = decode(blob.as_bytes()).unwrap();
         assert_eq!(json!({ "hello": "world" }), value);
     }
 
     #[test]
     fn decode_hello_world_with_garbage() {
-        let blob = "0KLUv/QBoiQAAeyJoZWxsbyI6IndvcmxkIn0=&1312";
+        let blob = "1KLUv/QBoiQAAeyJoZWxsbyI6IndvcmxkIn0=&1312";
         let value = decode(blob.as_bytes()).unwrap();
         assert_eq!(json!({ "hello": "world" }), value);
     }
